@@ -21,6 +21,12 @@ class EntryListTableViewController: UITableViewController {
             }
         }
     }
+    
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.tableView.reloadData()
+    }
 
     // MARK: - Table view data source
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -33,8 +39,6 @@ class EntryListTableViewController: UITableViewController {
         
         let entry = EntryController.entryContoller.entries[indexPath.row]
         cell.textLabel?.text = entry.title
-        //cell.detailTextLabel?.text = "\(entry.ckRecordID)"
-        
         return cell
     }
 

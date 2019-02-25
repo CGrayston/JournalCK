@@ -14,6 +14,7 @@ class EntryController {
     // MARK: - Shared Instance
     static let entryContoller = EntryController()
     
+    private init() {}
     // MARK: - Source of Truth
     var entries: [Entry] = []
     
@@ -22,6 +23,8 @@ class EntryController {
     // Save
     func save(entry: Entry, completion: @escaping (Bool) -> ()) {
         let entryRecord = CKRecord(entry: entry)
+        
+        
         CKContainer.default().privateCloudDatabase.save(entryRecord) { (record, error) in
             if let error = error {
                 print("There was an error in \(error): \(error.localizedDescription)")
@@ -37,12 +40,12 @@ class EntryController {
             completion(true)
         }
     }
+
     
     // Create
     func addEntryWith(title: String, body: String, completion: @escaping (Bool) -> ()) {
         // Create and append entry
         let entry = Entry(title: title, body: body)
-        self.entries.append(entry)
         
         // Save
         save(entry: entry) { (success) in
@@ -51,6 +54,37 @@ class EntryController {
             } else {
                 completion(false)
             }
+        }
+    }
+    
+    // Update
+    func updateEntry(entry: Entry, title: String, body: String, completion: @escaping (Bool) -> Void){
+        
+        //Update the entry locally
+        entry.title = title
+        entry.body = body
+        
+        //Update the entry
+        privateDB.fetch(withRecordID: entry.ckRecordID) { (record, error) in
+            if let error = error{
+                print("Error: \(error.localizedDescription)")
+                completion(false)
+                return
+            }
+            
+            guard let record = record else {completion(false) ; return}
+            
+            record[Constants.titleKey] = title
+            record[Constants.bodyKey] = body
+            
+            let operation = CKModifyRecordsOperation(recordsToSave: [record], recordIDsToDelete: nil)
+            operation.savePolicy = .changedKeys
+            operation.queuePriority = .high
+            operation.qualityOfService = .userInitiated
+            operation.modifyRecordsCompletionBlock = { (records, reordIDs, error) in
+                completion(true)
+            }
+            self.privateDB.add(operation)
         }
     }
     
